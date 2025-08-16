@@ -5,12 +5,12 @@ This is designed for development and testing environments where you need to auto
 
 ## Purpose
 
-This proxy is intended for automated deployments with Docker Swarm stacks where each service needs its own MySQL database. It's **NOT** suitable for production use.
+This proxy is intended for automated deployments with Docker Swarm stacks where each service needs its own MySQL database.
+It's **NOT** suitable for production use.
 
 ## Features
 
 - **Automatic database creation**
-- **Database name validation**
 - **Environment-based configuration**
 - **Robust error handling**
 - **Connection timeouts**
@@ -78,13 +78,11 @@ mysql -h localhost -P 3308 -u root -p -D myapp_db
 ### Docker Compose Example
 
 ```yaml
-version: '3.8'
 services:
   mysql:
     image: mysql:8.3
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: test
     ports:
       - "3306:3306"
 
@@ -106,7 +104,7 @@ services:
   myapp:
     image: myapp:latest
     environment:
-      DATABASE_URL: mysql://user:pass@mysql-auto-db-proxy:3308/myapp_db
+      ConnectionStrings__DefaultConnection: "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;"
     depends_on:
       - mysql-auto-db-proxy
     networks:
@@ -115,6 +113,56 @@ services:
 networks:
   app-network:
     driver: bridge
+```
+
+## Entity Framework Core Compatibility
+
+The MySQL Auto DB Proxy is fully compatible with Entity Framework Core and supports multiple MySQL client libraries.
+
+### Supported MySQL Client Libraries
+
+- **Pomelo.EntityFrameworkCore.MySql**
+- **MySql.EntityFrameworkCore**
+- **MySQL CLI**
+
+### EF Core Connection String Example
+
+```csharp
+// In appsettings.json or environment variable
+"ConnectionStrings__DefaultConnection": "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;"
+```
+
+### Important Connection String Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `Server` | `mysql-auto-db-proxy` | Proxy hostname |
+| `Port` | `3308` | Proxy port (default) |
+| `Database` | `your_database_name` | Database name (auto-created) |
+| `User Id` | `root` | MySQL username |
+| `Password` | `your_password` | MySQL password |
+| `SslMode` | `none` | **Required** - SSL must be disabled |
+
+### Automatic Database Creation
+
+When your EF Core application connects:
+
+1. **Database specified in connection string** is automatically created
+2. **EF Core migrations** can run normally
+3. **Multiple services** can use different database names
+4. **No manual database setup** required
+
+### Testing with MySQL CLI
+
+```bash
+# Connect to proxy (SSL disabled)
+mysql -h mysql-auto-db-proxy -P 3308 -u root -ppassword --ssl-mode=DISABLED
+
+# Connect to specific database (auto-creates if doesn't exist)
+mysql -h mysql-auto-db-proxy -P 3308 -u root -ppassword --ssl-mode=DISABLED -D my_new_database
+
+# Execute commands directly
+mysql -h mysql-auto-db-proxy -P 3308 -u root -ppassword --ssl-mode=DISABLED -e "SHOW DATABASES;"
 ```
 
 ## Development
@@ -131,9 +179,9 @@ docker build -t mysql-auto-db-proxy .
 
 ## Limitations
 
-- **Not for production**: This proxy is designed for development/testing only
-- **No connection pooling**: Each connection is handled independently
-- **No SSL termination**: SSL must be handled by the MySQL client/server
+- **Not for production**
+- **No connection pooling**
+- **No SSL support**
 
 ## License
 
