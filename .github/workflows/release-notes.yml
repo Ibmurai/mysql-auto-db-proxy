@@ -1,0 +1,51 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: release_notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: commits } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: 'master',
+              head: context.sha
+            });
+            
+            const changes = commits.commits
+              .filter(commit => !commit.commit.message.startsWith('Merge'))
+              .map(commit => `- ${commit.commit.message.split('\n')[0]}`)
+              .join('\n');
+            
+            const releaseNotes = `## Changes in this release\n\n${changes}\n\n## Docker Image\n\n\`\`\`bash\ndocker pull ghcr.io/ibmurai/mysql-auto-db-proxy:${context.ref.replace('refs/tags/', '')}\n\`\`\``;
+            
+            core.setOutput('release_notes', releaseNotes);
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref_name }}
+          body: ${{ steps.release_notes.outputs.release_notes }}
+          draft: false
+          prerelease: false
