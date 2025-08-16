@@ -104,7 +104,7 @@ services:
   myapp:
     image: myapp:latest
     environment:
-      ConnectionStrings__DefaultConnection: "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;"
+      ConnectionStrings__DefaultConnection: "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;AllowPublicKeyRetrieval=true;"
     depends_on:
       - mysql-auto-db-proxy
     networks:
@@ -129,7 +129,7 @@ The MySQL Auto DB Proxy is fully compatible with Entity Framework Core and suppo
 
 ```csharp
 // In appsettings.json or environment variable
-"ConnectionStrings__DefaultConnection": "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;"
+"ConnectionStrings__DefaultConnection": "Server=mysql-auto-db-proxy;Port=3308;Database=myapp;User Id=root;Password=password;SslMode=none;AllowPublicKeyRetrieval=true;"
 ```
 
 ### Important Connection String Parameters
@@ -142,6 +142,7 @@ The MySQL Auto DB Proxy is fully compatible with Entity Framework Core and suppo
 | `User Id` | `root` | MySQL username |
 | `Password` | `your_password` | MySQL password |
 | `SslMode` | `none` | **Required** - SSL must be disabled |
+| `AllowPublicKeyRetrieval` | `true` | **Required** - Allows client to request public key from server |
 
 ### Automatic Database Creation
 
